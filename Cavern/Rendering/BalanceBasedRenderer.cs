@@ -117,6 +117,13 @@ namespace Cavern.Rendering {
             Channel[] channels = Listener.Channels;
             for (int channel = 0; channel < channels.Length; channel++) {
                 if (!channels[channel].LFE) {
+                    // World-space scaling and its inverse can move an exact speaker placement
+                    // by a float ULP. Taking the square root of that residual power makes an
+                    // audible leak into a neighbouring speaker. Preserve the exact placement.
+                    if (source.Size == 0 && Vector3.DistanceSquared(direction, channels[channel].CubicalPos) <= 1e-12f) {
+                        WaveformUtils.Mix(samples, rendered, channel, channels.Length, gain);
+                        return;
+                    }
                     float channelY = channels[channel].CubicalPos.Y;
                     float channelZ = channels[channel].CubicalPos.Z;
                     if (channelY <= direction.Y) {
